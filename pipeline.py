@@ -19,10 +19,6 @@ import string
 
 sys.path.insert(0, os.getcwd())
 
-import warcio
-from warcio.archiveiterator import ArchiveIterator
-from warcio.warcwriter import WARCWriter
-
 import seesaw
 from seesaw.externalprocess import WgetDownload
 from seesaw.pipeline import Pipeline
@@ -31,9 +27,6 @@ from seesaw.util import find_executable
 
 if StrictVersion(seesaw.__version__) < StrictVersion('0.8.5'):
     raise Exception('This pipeline needs seesaw version 0.8.5 or higher.')
-
-if warcio.__version__ != '1.7.1':
-    raise Exception('Warcio should be version 1.7.1.')
 
 
 ###########################################################################
@@ -44,7 +37,7 @@ if warcio.__version__ != '1.7.1':
 # 2. prints the required version string
 WGET_LUA = find_executable(
     'Wget+Lua',
-    ['GNU Wget 1.14.lua.20130523-9a5c', 'GNU Wget 1.14.lua.20160530-955376b'],
+    ['GNU Wget 1.14.lua.20130523-9a5c', 'GNU Wget 1.14.lua.20160530-955376b', 'GNU Wget 1.20.3-at-lua'],
     [
         './wget-lua',
         './wget-lua-warrior',
@@ -65,10 +58,10 @@ if not WGET_LUA:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = '20190929.01'
+VERSION = '20191110.00'
 USER_AGENT = 'ArchiveTeam'
 TRACKER_ID = 'drawr'
-TRACKER_HOST = 'tracker.archiveteam.org'
+TRACKER_HOST = 'tracker-test.ddns.net'
 
 
 ###########################################################################
@@ -130,14 +123,20 @@ class PrepareDirectories(SimpleTask):
             time.strftime('%Y%m%d-%H%M%S'))
 
         open('%(item_dir)s/%(warc_file_base)s.warc' % item, 'w').close()
+        open('%(item_dir)s/%(warc_file_base)s_data.txt' % item, 'w').close()
+
+
 
 class MoveFiles(SimpleTask):
     def __init__(self):
         SimpleTask.__init__(self, 'MoveFiles')
 
     def process(self, item):
-        os.rename('%(item_dir)s/%(warc_file_base)s-deduplicated.warc.gz' % item,
-              '%(data_dir)s/%(warc_file_base)s-deduplicated.warc.gz' % item)
+        os.rename('%(item_dir)s/%(warc_file_base)s.warc.gz' % item,
+              '%(data_dir)s/%(warc_file_base)s.warc.gz' % item)
+        os.rename('%(item_dir)s/%(warc_file_base)s_data.txt' % item,
+              '%(data_dir)s/%(warc_file_base)s_data.txt' % item)
+
 
         shutil.rmtree('%(item_dir)s' % item)
 
@@ -163,12 +162,6 @@ def stats_id_function(item):
 class WgetArgs(object):
     post_chars = string.digits + string.ascii_lowercase
 
-    def int_to_str(self, i):
-        d, m = divmod(i, 36)
-        if d > 0:
-            return self.int_to_str(d) + self.post_chars[m]
-        return self.post_chars[m]
-
     def realize(self, item):
         wget_args = [
             WGET_LUA,
@@ -182,9 +175,9 @@ class WgetArgs(object):
             '--truncate-output',
             '-e', 'robots=off',
             '--rotate-dns',
-            '--recursive', '--level=inf',
+            #'--recursive', '--level=inf',
             '--no-parent',
-            '--page-requisites',
+            #'--page-requisites',
             '--timeout', '30',
             '--tries', 'inf',
             '--domains', 'drawr.net',
@@ -206,10 +199,7 @@ class WgetArgs(object):
         if item_type == 'ids':
             start, end = item_value.split('-', 1)
             for i in range(int(start), int(end)+1):
-                for j in range(2, 10):
-                    add_drawr_id(j, self.int_to_str(i))
-                for j in range(int(i)*3, int(i)*3+3):
-                    add_drawr_id(1, self.int_to_str(j))
+                wget_args.append("http://drawr.net/show.php?id=" + str(i))
         else:
             raise Exception('Unknown item')
 
@@ -242,7 +232,7 @@ pipeline = Pipeline(
     PrepareDirectories(warc_prefix='drawr'),
     WgetDownload(
         WgetArgs(),
-        max_tries=2,
+        max_tries=1,
         accept_on_exit_code=[0, 4, 8],
         env={
             'item_dir': ItemValue('item_dir'),
@@ -255,7 +245,8 @@ pipeline = Pipeline(
         defaults={'downloader': downloader, 'version': VERSION},
         file_groups={
             'data': [
-                ItemInterpolation('%(item_dir)s/%(warc_file_base)s.warc.gz')
+                ItemInterpolation('%(item_dir)s/%(warc_file_base)s.warc.gz'),
+                ItemInterpolation('%(item_dir)s/%(warc_file_base)s_data.txt')
             ]
         },
         id_function=stats_id_function,
