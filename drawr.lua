@@ -142,40 +142,41 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
       end
     end
     if string.match(url, "show%.php") then
-      for userprofile in string.gmatch(html2, 'mgnRight10"><a href="/([a-zA-Z0-9_-]+)">') do if userprofile ~= username then 
-        username = userprofile
-        userprofilelink = "http://drawr.net/"..username
-        table.insert(discovered, username)
-        --io.stdout:write("Found new profile " .. userprofile .. " with link " .. userprofilelink .. "\n")
-     end
-   end
-       local sn = string.match(html2, 'jsel_plyr_sn ="([a-zA-Z0-9_-%.]+)"')
-       if sn then
-         --io.stdout:write(sn .. "\n")
-         drawrservername = sn
-       end
-       local plyrid = string.match(html2, 'jsel_plyr_uid="([0-9]+)"')
-       if plyrid then
-         --io.stdout:write(plyrid .. "\n")
-         playeruid = plyrid
-       end
-       local plyrfn = string.match(html2, 'jsel_plyr_fn ="([a-zA-Z0-9]+)"')
-       if plyrfn then
-         --io.stdout:write(plyrfn .. "\n")
-         playerfn = plyrfn
-       end
-       --io.stdout:write(drawrservername .. " " .. playeruid .. " " .. playerfn .. "\n")
-       --io.stdout:write("Found play file " .. playfilelink .. "\n")
-       --io.stdout:write("Found imag file " .. imagefilelink .. "\n")
-       local thumbfilelink = "http://"..drawrservername.."/draw/img/"..playeruid.."/"..playerfn.."_150x150.png"
-       local   pngfilelink = "http://"..drawrservername.."/draw/img/"..playeruid.."/"..playerfn..".png"
-       local   xmlfilelink = "http://"..drawrservername.."/draw/img/"..playeruid.."/"..playerfn..".xml"
-       local    gzfilelink = "http://"..drawrservername.."/draw/img/"..playeruid.."/"..playerfn..".gz"
-       table.insert(todo_urls, filter_downloaded(thumbfilelink))
-       table.insert(todo_urls, filter_downloaded(pngfilelink))
-       table.insert(todo_urls, filter_downloaded(xmlfilelink))
-       table.insert(todo_urls, filter_downloaded(gzfilelink))
-       --os.execute("sleep 10")
+      for userprofile in string.gmatch(html2, 'mgnRight10"><a href="/([a-zA-Z0-9_-]+)">') do
+        if userprofile ~= username then 
+          username = userprofile
+          userprofilelink = "http://drawr.net/"..username
+          table.insert(discovered, username)
+          --io.stdout:write("Found new profile " .. userprofile .. " with link " .. userprofilelink .. "\n")
+        end
+      end
+      local sn = string.match(html2, 'jsel_plyr_sn ="([a-zA-Z0-9_-%.]+)"')
+      if sn then
+        --io.stdout:write(sn .. "\n")
+        drawrservername = sn
+      end
+      local plyrid = string.match(html2, 'jsel_plyr_uid="([0-9]+)"')
+      if plyrid then
+        --io.stdout:write(plyrid .. "\n")
+        playeruid = plyrid
+      end
+      local plyrfn = string.match(html2, 'jsel_plyr_fn ="([a-zA-Z0-9]+)"')
+      if plyrfn then
+        --io.stdout:write(plyrfn .. "\n")
+        playerfn = plyrfn
+      end
+      --io.stdout:write(drawrservername .. " " .. playeruid .. " " .. playerfn .. "\n")
+      --io.stdout:write("Found play file " .. playfilelink .. "\n")
+      --io.stdout:write("Found imag file " .. imagefilelink .. "\n")
+      local thumbfilelink = "http://"..drawrservername.."/draw/img/"..playeruid.."/"..playerfn.."_150x150.png"
+      local   pngfilelink = "http://"..drawrservername.."/draw/img/"..playeruid.."/"..playerfn..".png"
+      local   xmlfilelink = "http://"..drawrservername.."/draw/img/"..playeruid.."/"..playerfn..".xml"
+      local    gzfilelink = "http://"..drawrservername.."/draw/img/"..playeruid.."/"..playerfn..".gz"
+      table.insert(todo_urls, filter_downloaded(thumbfilelink))
+      table.insert(todo_urls, filter_downloaded(pngfilelink))
+      table.insert(todo_urls, filter_downloaded(xmlfilelink))
+      table.insert(todo_urls, filter_downloaded(gzfilelink))
+      --os.execute("sleep 10")
     end
   end
 
